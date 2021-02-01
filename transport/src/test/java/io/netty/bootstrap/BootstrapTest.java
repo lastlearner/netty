@@ -5,7 +5,7 @@
  * version 2.0 (the "License"); you may not use this file except in compliance
  * with the License. You may obtain a copy of the License at:
  *
- *   http://www.apache.org/licenses/LICENSE-2.0
+ *   https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
@@ -38,6 +38,7 @@ import io.netty.channel.local.LocalServerChannel;
 import io.netty.resolver.AddressResolver;
 import io.netty.resolver.AddressResolverGroup;
 import io.netty.resolver.AbstractAddressResolver;
+import io.netty.util.AttributeKey;
 import io.netty.util.concurrent.EventExecutor;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.Promise;
@@ -51,10 +52,13 @@ import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.LinkedBlockingQueue;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.*;
 
@@ -70,6 +74,28 @@ public class BootstrapTest {
         groupB.shutdownGracefully();
         groupA.terminationFuture().syncUninterruptibly();
         groupB.terminationFuture().syncUninterruptibly();
+    }
+
+    @Test
+    public void testOptionsCopied() {
+        final Bootstrap bootstrapA = new Bootstrap();
+        bootstrapA.option(ChannelOption.AUTO_READ, true);
+        Map.Entry<ChannelOption<?>, Object>[] channelOptions = bootstrapA.newOptionsArray();
+        bootstrapA.option(ChannelOption.AUTO_READ, false);
+        assertEquals(ChannelOption.AUTO_READ, channelOptions[0].getKey());
+        assertEquals(true, channelOptions[0].getValue());
+    }
+
+    @Test
+    public void testAttributesCopied() {
+        AttributeKey<String> key = AttributeKey.valueOf(UUID.randomUUID().toString());
+        String value = "value";
+        final Bootstrap bootstrapA = new Bootstrap();
+        bootstrapA.attr(key, value);
+        Map.Entry<AttributeKey<?>, Object>[] attributesArray = bootstrapA.newAttributesArray();
+        bootstrapA.attr(key, "value2");
+        assertEquals(key, attributesArray[0].getKey());
+        assertEquals(value, attributesArray[0].getValue());
     }
 
     @Test(timeout = 10000)
